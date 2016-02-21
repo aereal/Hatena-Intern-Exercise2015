@@ -44,13 +44,25 @@ object LTSVLine {
 }
 
 object LtsvParser {
-  def safeParse(filePath: String): Iterable[Option[Log]] = {
-    Path.fromString(filePath).lines().map {
+  import scalax.io.LongTraversable
+
+  def safeParseLines(path: scalax.file.Path): Option[LongTraversable[String]] = {
+    Some(path.lines())
+  }
+
+  def parseRecords(lines: Iterable[String]): Iterable[Option[Log]] =
+    lines.map {
       case LTSVLine(log) => Some(log)
-    }.toIterable
+    }
+
+  def safeParse(filePath: String): Option[Iterable[Option[Log]]] = {
+    for (
+      lines <- safeParseLines(Path.fromString(filePath));
+      logs <- Some(parseRecords(lines.toIterable))
+    ) yield logs
   }
 
   def parse(filePath: String): Iterable[Log] = {
-    safeParse(filePath).map(_.get)
+    safeParse(filePath).get.flatten
   }
 }
