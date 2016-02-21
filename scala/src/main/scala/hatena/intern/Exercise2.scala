@@ -2,7 +2,24 @@ package hatena.intern
 
 import scalax.file.Path
 
+object SafeConvertableImplicits {
+  trait SafeConversion[I, O] {
+    def run(in: I): Option[O]
+  }
+
+  implicit def StringToIntConversion = new SafeConversion[String, Int] {
+    def run(in: String) = {
+      import scala.util.control.Exception._
+      catching(classOf[NumberFormatException]).opt(in.toInt)
+    }
+  }
+
+  def safeConvert[I, O](in: I)(implicit instance: SafeConversion[I, O]) = instance.run(in)
+}
+
 object LTSVLine {
+  import SafeConvertableImplicits._
+
   def unapply(line: String): Option[Log] = {
     val pairs = for (records <- line.split("\t")) yield records.split(":", 2)
     val records = pairs.map { case Array(k, v) => (k, v) }.toMap
@@ -11,13 +28,13 @@ object LTSVLine {
       user <- records.get("user");
       req <- records.get("req");
       referer <- records.get("referer");
-      status <- records.get("status");
-      statusInt <- safeStringToInt(status);
-      size <- records.get("size");
-      sizeInt <- safeStringToInt(size);
-      epoch <- records.get("epoch");
-      epochInt <- safeStringToInt(epoch)
-    ) yield Log(host, user, epochInt, req, statusInt, sizeInt, referer)
+      rawStatus <- records.get("status");
+      status: Int <- safeConvert(rawStatus);
+      rawSize <- records.get("size");
+      size <- safeStringToInt(rawSize);
+      rawEpoch <- records.get("epoch");
+      epoch <- safeStringToInt(rawEpoch)
+    ) yield Log(host, user, epoch, req, status, size, referer)
   }
 
   def safeStringToInt(s: String): Option[Int] = {
