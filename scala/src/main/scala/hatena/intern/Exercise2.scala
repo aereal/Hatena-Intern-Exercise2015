@@ -31,15 +31,10 @@ object LTSVLine {
       rawStatus <- records.get("status");
       status: Int <- safeConvert(rawStatus);
       rawSize <- records.get("size");
-      size <- safeStringToInt(rawSize);
+      size: Int <- safeConvert(rawSize);
       rawEpoch <- records.get("epoch");
-      epoch <- safeStringToInt(rawEpoch)
+      epoch: Int <- safeConvert(rawEpoch)
     ) yield Log(host, user, epoch, req, status, size, referer)
-  }
-
-  def safeStringToInt(s: String): Option[Int] = {
-    import scala.util.control.Exception._
-    catching(classOf[NumberFormatException]).opt(s.toInt)
   }
 }
 
