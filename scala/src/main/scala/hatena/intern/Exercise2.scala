@@ -21,8 +21,7 @@ object LTSVLine {
   import SafeConvertableImplicits._
 
   def unapply(line: String): Option[Log] = {
-    val pairs = for (records <- line.split("\t")) yield records.split(":", 2)
-    val records = pairs.map { case Array(k, v) => (k, v) }.toMap
+    val records = pairsToMap(parseLine(line))
     for (
       host <- records.get("host");
       user <- records.get("user");
@@ -36,6 +35,12 @@ object LTSVLine {
       epoch: Int <- safeConvert(rawEpoch)
     ) yield Log(host, user, epoch, req, status, size, referer)
   }
+
+  def parseLine(line: String): Array[Array[String]] = line.split("\t").map(_.split(":", 2))
+
+  def pairsToMap(pairs: Array[Array[String]]): Map[String, String] = pairs.map {
+    case Array(k, v) => (k, v)
+  }.toMap
 }
 
 object LtsvParser {
